@@ -23,37 +23,43 @@ You'll need these credentials before setting up:
 | YouTube Playlist ID | From the playlist URL: `youtube.com/playlist?list=<THIS_PART>` |
 | TickTick Access Token | Create an app at [developer.ticktick.com](https://developer.ticktick.com/), then follow the [OAuth flow](#ticktick-oauth-flow) below |
 | TickTick List ID | `curl "https://api.ticktick.com/open/v1/project" -H "Authorization: Bearer <TOKEN>"` |
-| Cloudflare API Token | [Cloudflare Dashboard → API Tokens](https://dash.cloudflare.com/profile/api-tokens) → use **Edit Cloudflare Workers** template |
 
-## Setup
+## Deploy
+
+### 1. Fork/clone the repo
 
 ```bash
 git clone https://github.com/praffq-dev/yt-playlist-ticktick-sync.git
 cd yt-playlist-ticktick-sync
-cp .env.example .env # fill in your values
 ```
 
-### GitHub Actions (auto-deploy)
+### 2. Connect to Cloudflare
 
-Add these secrets in your repo **Settings → Secrets → Actions**:
+Go to [Cloudflare Dashboard → Workers & Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages) → **Create** → **Import a repository** → select this repo. Cloudflare will auto-detect the config and deploy on every push to `main`.
 
-- `CLOUDFLARE_API_TOKEN`
-- `YOUTUBE_API_KEY`
-- `YOUTUBE_PLAYLIST_ID`
-- `TICKTICK_ACCESS_TOKEN`
-- `TICKTICK_LIST_ID`
-
-Push to `main` and it deploys automatically.
-
-### Manual deploy
+Alternatively, deploy manually:
 
 ```bash
 npx wrangler deploy
 ```
 
+### 3. Add secrets
+
+After the first deploy, go to [Cloudflare Dashboard](https://dash.cloudflare.com) → **Workers & Pages** → click your Worker → **Settings** → **Variables and Secrets** → add these as type **Secret**:
+
+| Name | Value |
+|------|-------|
+| `YT_API_KEY` | Your YouTube Data API key |
+| `PLAYLIST_ID` | Your YouTube playlist ID |
+| `TICK_TICK_API_TOKEN` | Your TickTick OAuth access token |
+| `TICK_TICK_LIST_ID` | Your TickTick list/project ID |
+
+Click **Deploy**. The cron will now run automatically on schedule.
+
 ## Local development
 
 ```bash
+cp .env.example .env  # fill in your values
 uv sync
 uv run pywrangler dev --test-scheduled
 
@@ -95,6 +101,7 @@ The `access_token` in the response expires in ~180 days.
 - YouTube API free tier: 10,000 units/day. Each playlist fetch costs 1 unit.
 - TickTick token expires in ~180 days — re-authorize and update the secret when it does.
 - Deduplication is title-based: if a video title matches an existing task title, it's skipped.
+- Secrets are set in the Cloudflare dashboard and persist across deployments.
 
 ## License
 
