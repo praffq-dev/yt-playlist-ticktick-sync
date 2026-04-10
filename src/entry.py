@@ -57,10 +57,13 @@ async def get_playlist_items_to_add(env):
         data = json.loads(await resp.text())
 
         for item in data.get("items", []):
-            if item["snippet"]["title"] in existing_titles:
+            raw_title = item["snippet"]["title"]
+            clean_title = raw_title.split("||")[0].strip() if "||" in raw_title else raw_title
+
+            if clean_title in existing_titles:
                 continue
             all_videos.append({
-                "title": item["snippet"]["title"],
+                "title": clean_title,
                 "url": f"https://www.youtube.com/watch?v={item['snippet']['resourceId']['videoId']}",
             })
 
@@ -74,13 +77,11 @@ async def get_playlist_items_to_add(env):
 async def convert_videos_data_to_tasks(videos_data):
     tasks = []
     for video in videos_data:
-        title = video["title"].split("||")[0].strip() if "||" in video["title"] else video["title"]
         tasks.append({
-            "title": title,
+            "title": video["title"],
             "content": f"Video Link: {video['url']}",
         })
     return tasks
-
 
 class Default(WorkerEntrypoint):
 
