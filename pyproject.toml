@@ -1,0 +1,12 @@
+[project]
+name = "tick-tick-yt-sync"
+version = "0.1.0"
+description = "This sync yt playlist with your todo, checks for videos added in past 25 hours to a playlist and adds it to tick tick task"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "workers-py",
+    "workers-runtime-sdk",
+]
