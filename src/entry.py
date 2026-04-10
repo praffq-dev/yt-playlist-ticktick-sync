@@ -88,19 +88,26 @@ class Default(WorkerEntrypoint):
     async def scheduled(self, controller, env, ctx):
         print(f"cron processed: {controller.cron}")
 
-        videos = await get_playlist_items_to_add(env)
+        e = self.env
+
+        videos = await get_playlist_items_to_add(e)
         print(f"{len(videos)} new video(s) to add")
 
         tasks = await convert_videos_data_to_tasks(videos)
 
         for task in tasks:
-            await add_task_to_tick_tick(env, task["title"], task["content"])
+            await add_task_to_tick_tick(e, task["title"], task["content"])
             print(f"created task: {task['title']}")
 
         print(f"done. created {len(tasks)} task(s).")
 
     async def fetch(self, request, env, ctx):
-        return Response.json({
-            "status": "ok",
-            "worker": "yt-ticktick-sync",
-        })
+        url = str(request.url)
+        if "/trigger" in url:
+            e = self.env
+            videos = await get_playlist_items_to_add(e)
+            tasks = await convert_videos_data_to_tasks(videos)
+            for task in tasks:
+                await add_task_to_tick_tick(e, task["title"], task["content"])
+            return Response.json({"status": "done", "tasks_created": len(tasks)})
+        return Response.json({"status": "ok", "worker": "yt-ticktick-sync"})
