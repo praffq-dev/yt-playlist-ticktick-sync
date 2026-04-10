@@ -5,3 +5,10 @@ compatibility_flags = ["python_workers"]
 
 [triggers]
 crons = ["30 18 * * *"]
+
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true
+
+[observability.traces]
