@@ -1,6 +1,6 @@
 # yt-playlist-ticktick-sync
 
-Cloudflare Python Worker that runs daily, checks a YouTube playlist for new videos, and creates tasks in your TickTick list. Deduplicates by comparing video titles against existing tasks.
+Cloudflare Python Worker that runs daily, checks a YouTube playlist for new videos, and creates tasks in your TickTick list. Tracks processed video IDs in Cloudflare KV to prevent duplicates — even if you complete or delete tasks in TickTick.
 
 ## How it works
 
@@ -8,9 +8,9 @@ Cloudflare Python Worker that runs daily, checks a YouTube playlist for new vide
 Cloudflare Cron (daily)
     │
     ├──▶ Fetch videos from YouTube playlist
-    ├──▶ Fetch existing tasks from TickTick list
-    ├──▶ Find new videos not yet in TickTick
-    └──▶ Create a task for each new video
+    ├──▶ Check KV store for already-processed video IDs
+    ├──▶ Create a task for each new video
+    └──▶ Save video IDs to KV
 ```
 
 ## Prerequisites
@@ -43,9 +43,13 @@ Alternatively, deploy manually:
 npx wrangler deploy
 ```
 
-### 3. Add secrets
+### 3. Create KV namespace
 
-After the first deploy, go to [Cloudflare Dashboard](https://dash.cloudflare.com) → **Workers & Pages** → click your Worker → **Settings** → **Variables and Secrets** → add these as type **Secret**:
+Go to **Workers & Pages** → **KV** → **Create a namespace** → name it anything (e.g. `yt-sync-kv`). Then go to your Worker → **Settings** → **Bindings** → **Add** → **KV Namespace** → set variable name as `YT_SYNC_KV` and select the namespace you created → **Deploy**.
+
+### 4. Add secrets
+
+Go to your Worker → **Settings** → **Variables and Secrets** → add these as type **Secret**:
 
 | Name | Value |
 |------|-------|
@@ -55,6 +59,10 @@ After the first deploy, go to [Cloudflare Dashboard](https://dash.cloudflare.com
 | `TICK_TICK_LIST_ID` | Your TickTick list/project ID |
 
 Click **Deploy**. The cron will now run automatically on schedule.
+
+### 5. Trigger first run
+
+Visit `https://<your-worker>.<subdomain>.workers.dev/trigger` to run the sync immediately and seed the KV store with existing video IDs.
 
 ## Local development
 
@@ -100,8 +108,9 @@ The `access_token` in the response expires in ~180 days.
 
 - YouTube API free tier: 10,000 units/day. Each playlist fetch costs 1 unit.
 - TickTick token expires in ~180 days — re-authorize and update the secret when it does.
-- Deduplication is title-based: if a video title matches an existing task title, it's skipped.
+- Deduplication is video ID-based via Cloudflare KV — completing or deleting tasks in TickTick won't cause duplicates.
 - Secrets are set in the Cloudflare dashboard and persist across deployments.
+- Visit `/trigger` on your Worker URL to run the sync on demand.
 
 ## License
 

@@ -12,3 +12,7 @@ enabled = true
 invocation_logs = true
 
 [observability.traces]
+
+[[kv_namespaces]]
+binding = "YT_SYNC_KV"
+id = "fa5b77c694fd4e2ba07b23e3e8f49cd7"
